@@ -258,7 +258,7 @@ export const adaptiveQuestions: AdaptiveQuestion[] = [
   // Data Insights - Hard
   {
     id: "d3-hard",
-    text: "The scatter plot shows the relationship between advertising expenditure and sales for 20 different products. Based on the regression line, what would be the expected increase in sales for a $10,000 increase in advertising expenditure?",
+    text: "The scatter plot shows the relationship between advertising expenditure and sales for 20 different products. Based on the regression line, what would be the expected increase in sales for a $10,000 increase in advertising expenditure? ",
     type: "image-based",
     imageUrl: "/placeholder.svg?height=300&width=500&text=Scatter+Plot+with+Regression+Line",
     options: [
