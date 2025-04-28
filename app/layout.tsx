@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "GMAT Practice - Free GMAT Prep",
   description: "Free GMAT practice tests and resources to help you prepare for the GMAT exam",
-    generator: 'v0.dev'
+  generator: "v0.dev",
 }
 
 export default function RootLayout({

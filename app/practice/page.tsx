@@ -15,6 +15,15 @@ export default function PracticePage() {
 
   const testTypes = [
     {
+      id: "adaptive",
+      title: "Adaptive GMAT Test",
+      description: "Computer-adaptive test that adjusts to your skill level",
+      icon: <Brain className="h-5 w-5" />,
+      duration: "75 minutes",
+      questions: 15,
+      category: "all",
+    },
+    {
       id: "full",
       title: "Full-Length Test",
       description: "Complete GMAT simulation with all sections",
