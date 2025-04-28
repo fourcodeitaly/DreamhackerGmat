@@ -5,7 +5,7 @@ export const adaptiveQuestions: AdaptiveQuestion[] = [
   // Quantitative - Easy
   {
     id: "q1-easy",
-    text: "If x + 5 = 12, what is the value of x?",
+    text: "If x + 5 = 12, what is the value of x",
     type: "multiple-choice",
     options: [
       { id: "a", text: "5" },
