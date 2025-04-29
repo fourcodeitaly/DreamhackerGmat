@@ -1,4 +1,214 @@
-import type { AdaptiveQuestion } from "@/lib/cat-algorithm"
+import type { AdaptiveQuestion, ReadingPassage } from "@/lib/cat-algorithm"
+
+// Reading passages for adaptive tests
+export const adaptivePassages: ReadingPassage[] = [
+  {
+    id: "passage-1",
+    title: "The Evolution of Corporate Social Responsibility",
+    content: `Corporate social responsibility (CSR) has evolved significantly over the past several decades, transforming from a peripheral concern to a central business strategy for many organizations. In its earliest manifestations, CSR was often limited to philanthropic activities, with businesses making charitable donations or sponsoring community events as a form of giving back. These initiatives, while beneficial, were typically disconnected from core business operations and strategic objectives.
+
+The 1970s marked a turning point in the conceptualization of CSR, largely due to economist Milton Friedman's influential assertion that the sole responsibility of business was to increase profits for shareholders. This perspective, while controversial, prompted important discussions about the proper role of business in society and the potential conflicts between profit maximization and social welfare.
+
+By the 1990s, a more integrated approach to CSR began to emerge. Companies started to recognize that social and environmental issues could have material impacts on their financial performance and long-term viability. This shift was driven by several factors, including increased globalization, greater transparency enabled by information technology, and growing consumer awareness of corporate practices.
+
+Today, many leading organizations have moved beyond viewing CSR as a separate function and instead embrace the concept of "shared value," which involves creating economic value in ways that simultaneously produce value for society. This approach recognizes that social problems can create economic costs for firms, and addressing these issues can lead to innovations, productivity improvements, and market expansion.`,
+    difficulty: "medium",
+  },
+  {
+    id: "passage-2",
+    title: "Quantum Computing: Promises and Challenges",
+    content: `Quantum computing represents one of the most promising and challenging frontiers in computer science today. Unlike classical computers, which process information in binary form as bits (0s and 1s), quantum computers leverage the principles of quantum mechanics to process information as quantum bits, or qubits. This fundamental difference enables quantum computers to exist in multiple states simultaneously through a phenomenon known as superposition, and to exhibit quantum entanglement, whereby qubits become interconnected in ways that have no classical analog.
+
+These quantum properties potentially allow quantum computers to solve certain complex problems exponentially faster than even the most powerful classical supercomputers. For instance, Shor's algorithm, developed by mathematician Peter Shor in 1994, demonstrates that a sufficiently powerful quantum computer could factor large numbers exponentially faster than known classical algorithms. This capability has profound implications for cryptography, as many current encryption methods rely on the computational difficulty of factoring large numbers.
+
+Similarly, Grover's algorithm offers a quadratic speedup for searching unsorted databases, which could significantly enhance optimization problems across numerous industries. Quantum simulation, another promising application, could revolutionize materials science, drug discovery, and chemical engineering by accurately modeling quantum systems that are computationally intractable for classical computers.`,
+    difficulty: "hard",
+  },
+  {
+    id: "passage-3",
+    title: "Urban Agriculture and Food Security",
+    content: `Urban agriculture—the practice of cultivating, processing, and distributing food in or around urban areas—has gained significant attention in recent years as a potential strategy to address food security challenges in cities worldwide. As global urbanization accelerates, with projections indicating that nearly 70% of the world's population will live in urban areas by 2050, ensuring adequate food access for city dwellers has become an increasingly pressing concern.
+
+Traditional agricultural systems rely heavily on rural production and complex supply chains to deliver food to urban consumers. This model, while efficient in many respects, creates vulnerabilities related to transportation disruptions, price fluctuations, and environmental impacts. Urban agriculture offers an alternative or complementary approach by localizing certain aspects of food production, potentially reducing the distance from farm to table and creating more resilient local food systems.
+
+The forms of urban agriculture vary widely, from community gardens and rooftop farms to more technology-intensive approaches such as vertical farming and hydroponic systems. Each model presents different advantages and limitations in terms of productivity, resource requirements, and accessibility.`,
+    difficulty: "easy",
+  },
+]
+
+// Add reading comprehension questions to the adaptive questions
+const readingComprehensionQuestions: AdaptiveQuestion[] = [
+  // Questions for Passage 1 (medium difficulty)
+  {
+    id: "rc1-q1",
+    text: "According to the passage, how has corporate social responsibility evolved over time?",
+    type: "reading-comprehension",
+    options: [
+      { id: "a", text: "It has become less important to businesses over time" },
+      { id: "b", text: "It has shifted from peripheral philanthropy to integrated business strategy" },
+      { id: "c", text: "It has remained consistent in its implementation since the 1970s" },
+      { id: "d", text: "It has become exclusively focused on environmental concerns" },
+      { id: "e", text: "It has been replaced entirely by the profit maximization principle" },
+    ],
+    correctAnswer: "b",
+    explanation:
+      "The passage describes how CSR evolved from peripheral philanthropic activities to becoming integrated into core business strategies, with companies now embracing the concept of 'shared value.'",
+    difficulty: "medium",
+    section: "Reading Comprehension",
+    passageId: "passage-1",
+  },
+  {
+    id: "rc1-q2",
+    text: "The author mentions Milton Friedman primarily to:",
+    type: "reading-comprehension",
+    options: [
+      { id: "a", text: "Endorse his view that businesses should focus solely on profits" },
+      { id: "b", text: "Criticize his influence on corporate behavior in the 1970s" },
+      { id: "c", text: "Highlight a significant perspective that influenced discussions about CSR" },
+      { id: "d", text: "Demonstrate how economic theories have become irrelevant to modern business" },
+      { id: "e", text: "Explain why philanthropic activities decreased during that period" },
+    ],
+    correctAnswer: "c",
+    explanation:
+      "The author mentions Friedman to highlight his influential perspective that prompted important discussions about the role of business in society, not to endorse or criticize his view.",
+    difficulty: "medium",
+    section: "Reading Comprehension",
+    passageId: "passage-1",
+  },
+  {
+    id: "rc1-q3",
+    text: "Which of the following best describes the concept of 'shared value' as presented in the passage?",
+    type: "reading-comprehension",
+    options: [
+      { id: "a", text: "Distributing company profits equally among all stakeholders" },
+      { id: "b", text: "Creating economic value for the company while simultaneously producing value for society" },
+      { id: "c", text: "Sharing corporate resources with charitable organizations" },
+      { id: "d", text: "Allowing employees to participate in company ownership" },
+      { id: "e", text: "Balancing financial returns between shareholders and executives" },
+    ],
+    correctAnswer: "b",
+    explanation:
+      "The passage defines 'shared value' as 'creating economic value in ways that simultaneously produce value for society,' which aligns with option B.",
+    difficulty: "medium",
+    section: "Reading Comprehension",
+    passageId: "passage-1",
+  },
+
+  // Questions for Passage 2 (hard difficulty)
+  {
+    id: "rc2-q1",
+    text: "What fundamental property of quantum computing distinguishes it from classical computing?",
+    type: "reading-comprehension",
+    options: [
+      { id: "a", text: "The use of silicon-based processors" },
+      {
+        id: "b",
+        text: "The ability to process information as qubits that can exist in multiple states simultaneously",
+      },
+      { id: "c", text: "The requirement for room temperature operation" },
+      { id: "d", text: "The focus on solving only cryptographic problems" },
+      { id: "e", text: "The reduced need for error correction" },
+    ],
+    correctAnswer: "b",
+    explanation:
+      "The passage explains that unlike classical computers that process information in binary form, quantum computers use qubits that can exist in multiple states simultaneously through superposition.",
+    difficulty: "hard",
+    section: "Reading Comprehension",
+    passageId: "passage-2",
+  },
+  {
+    id: "rc2-q2",
+    text: "According to the passage, which of the following is a potential application of quantum computing?",
+    type: "reading-comprehension",
+    options: [
+      { id: "a", text: "Social media optimization" },
+      { id: "b", text: "Weather forecasting for the next century" },
+      { id: "c", text: "Factoring large numbers for cryptography applications" },
+      { id: "d", text: "Replacing all classical computers within five years" },
+      { id: "e", text: "Eliminating the need for software development" },
+    ],
+    correctAnswer: "c",
+    explanation:
+      "The passage specifically mentions Shor's algorithm, which demonstrates that quantum computers could factor large numbers exponentially faster than classical algorithms, with implications for cryptography.",
+    difficulty: "hard",
+    section: "Reading Comprehension",
+    passageId: "passage-2",
+  },
+  {
+    id: "rc2-q3",
+    text: "Based on the passage, Grover's algorithm would be most useful for:",
+    type: "reading-comprehension",
+    options: [
+      { id: "a", text: "Creating new programming languages" },
+      { id: "b", text: "Searching through unsorted databases" },
+      { id: "c", text: "Developing artificial intelligence" },
+      { id: "d", text: "Improving computer graphics" },
+      { id: "e", text: "Reducing energy consumption in data centers" },
+    ],
+    correctAnswer: "b",
+    explanation:
+      "The passage states that 'Grover's algorithm offers a quadratic speedup for searching unsorted databases, which could significantly enhance optimization problems across numerous industries.'",
+    difficulty: "hard",
+    section: "Reading Comprehension",
+    passageId: "passage-2",
+  },
+
+  // Questions for Passage 3 (easy difficulty)
+  {
+    id: "rc3-q1",
+    text: "What is the primary focus of urban agriculture according to the passage?",
+    type: "reading-comprehension",
+    options: [
+      { id: "a", text: "Replacing traditional rural farming entirely" },
+      { id: "b", text: "Cultivating, processing, and distributing food in or around urban areas" },
+      { id: "c", text: "Eliminating the need for grocery stores in cities" },
+      { id: "d", text: "Creating jobs for unemployed city residents" },
+      { id: "e", text: "Reducing the global population growth rate" },
+    ],
+    correctAnswer: "b",
+    explanation:
+      "The passage defines urban agriculture in the first sentence as 'the practice of cultivating, processing, and distributing food in or around urban areas.'",
+    difficulty: "easy",
+    section: "Reading Comprehension",
+    passageId: "passage-3",
+  },
+  {
+    id: "rc3-q2",
+    text: "According to the passage, what percentage of the world's population is projected to live in urban areas by 2050?",
+    type: "reading-comprehension",
+    options: [
+      { id: "a", text: "Nearly 50%" },
+      { id: "b", text: "Nearly 60%" },
+      { id: "c", text: "Nearly 70%" },
+      { id: "d", text: "Nearly 80%" },
+      { id: "e", text: "Nearly 90%" },
+    ],
+    correctAnswer: "c",
+    explanation:
+      "The passage states that 'global urbanization accelerates, with projections indicating that nearly 70% of the world's population will live in urban areas by 2050.'",
+    difficulty: "easy",
+    section: "Reading Comprehension",
+    passageId: "passage-3",
+  },
+  {
+    id: "rc3-q3",
+    text: "Which of the following is NOT mentioned as a form of urban agriculture in the passage?",
+    type: "reading-comprehension",
+    options: [
+      { id: "a", text: "Community gardens" },
+      { id: "b", text: "Rooftop farms" },
+      { id: "c", text: "Vertical farming" },
+      { id: "d", text: "Hydroponic systems" },
+      { id: "e", text: "Underground farming" },
+    ],
+    correctAnswer: "e",
+    explanation:
+      "The passage mentions community gardens, rooftop farms, vertical farming, and hydroponic systems as forms of urban agriculture, but does not mention underground farming.",
+    difficulty: "easy",
+    section: "Reading Comprehension",
+    passageId: "passage-3",
+  },
+]
 
 // Sample questions for the adaptive test
 export const adaptiveQuestions: AdaptiveQuestion[] = [
@@ -274,4 +484,7 @@ export const adaptiveQuestions: AdaptiveQuestion[] = [
     difficulty: "hard",
     section: "Data Insights",
   },
+
+  // Add the reading comprehension questions
+  ...readingComprehensionQuestions,
 ]

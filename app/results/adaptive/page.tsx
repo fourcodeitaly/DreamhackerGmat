@@ -22,9 +22,14 @@ import {
   Pie,
   Cell,
   Legend,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
 } from "recharts"
 import { adaptiveQuestions } from "@/data/adaptive-questions"
-import type { DifficultyLevel } from "@/lib/cat-algorithm"
+import type { DifficultyLevel, QuestionSection } from "@/lib/cat-algorithm"
 
 interface TestResults {
   score: number
@@ -33,8 +38,15 @@ interface TestResults {
     userAnswer: string
     isCorrect: boolean
     difficulty: DifficultyLevel
+    section: QuestionSection
   }[]
   date: string
+  sectionScores?: {
+    Quantitative: number
+    Verbal: number
+    "Data Insights": number
+    "Reading Comprehension": number
+  }
 }
 
 export default function AdaptiveResultsPage() {
@@ -112,6 +124,50 @@ export default function AdaptiveResultsPage() {
     },
   ]
 
+  // Calculate section performance if not already provided
+  const sectionScores = results.sectionScores || {
+    Quantitative: calculateSectionScore("Quantitative"),
+    Verbal: calculateSectionScore("Verbal"),
+    "Data Insights": calculateSectionScore("Data Insights"),
+    "Reading Comprehension": calculateSectionScore("Reading Comprehension"),
+  }
+
+  function calculateSectionScore(section: QuestionSection): number {
+    const sectionQuestions = results.answeredQuestions.filter((q) => {
+      const question = adaptiveQuestions.find((aq) => aq.id === q.questionId)
+      return question?.section === section
+    })
+
+    if (sectionQuestions.length === 0) return 0
+
+    const correctCount = sectionQuestions.filter((q) => q.isCorrect).length
+    return Math.round((correctCount / sectionQuestions.length) * 60)
+  }
+
+  // Section performance data for radar chart
+  const sectionPerformance = [
+    {
+      subject: "Quantitative",
+      score: sectionScores.Quantitative,
+      fullMark: 60,
+    },
+    {
+      subject: "Verbal",
+      score: sectionScores.Verbal,
+      fullMark: 60,
+    },
+    {
+      subject: "Data Insights",
+      score: sectionScores["Data Insights"],
+      fullMark: 60,
+    },
+    {
+      subject: "Reading Comp",
+      score: sectionScores["Reading Comprehension"],
+      fullMark: 60,
+    },
+  ]
+
   // Get percentile based on score (simplified calculation)
   const getPercentile = (score: number) => {
     if (score >= 760) return 99
@@ -177,8 +233,9 @@ export default function AdaptiveResultsPage() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-8" onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="sections">Sections</TabsTrigger>
             <TabsTrigger value="questions">Questions</TabsTrigger>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
           </TabsList>
@@ -279,6 +336,66 @@ export default function AdaptiveResultsPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="sections" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Section Performance</CardTitle>
+                <CardDescription>Your performance across different test sections</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={sectionPerformance}>
+                      <PolarGrid />
+                      <PolarAngleAxis dataKey="subject" />
+                      <PolarRadiusAxis angle={30} domain={[0, 60]} />
+                      <Radar name="Score" dataKey="score" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                      <Tooltip />
+                      <Legend />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(sectionScores).map(([section, score]) => (
+                    <div key={section} className="p-4 border rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-medium">{section}</h3>
+                        <span className="text-lg font-bold">{score}/60</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div
+                          className="bg-primary h-2.5 rounded-full"
+                          style={{ width: `${(score / 60) * 100}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {score >= 50
+                          ? "Excellent"
+                          : score >= 40
+                            ? "Good"
+                            : score >= 30
+                              ? "Average"
+                              : "Needs improvement"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 p-4 bg-muted rounded-md">
+                  <h3 className="font-medium mb-2">Reading Comprehension Analysis:</h3>
+                  <p>
+                    {sectionScores["Reading Comprehension"] > 45
+                      ? "Your reading comprehension skills are excellent. You demonstrate strong ability to understand complex passages and answer detailed questions accurately."
+                      : sectionScores["Reading Comprehension"] > 30
+                        ? "Your reading comprehension skills are good, but there's room for improvement. Focus on identifying main ideas and supporting details in complex passages."
+                        : "Your reading comprehension skills need improvement. Practice reading complex academic passages and identifying key arguments and supporting evidence."}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="questions" className="space-y-6">
             <Card>
               <CardHeader>
@@ -315,6 +432,7 @@ export default function AdaptiveResultsPage() {
                             >
                               {question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)}
                             </Badge>
+                            <Badge variant="secondary">{question.section}</Badge>
                           </div>
                         </div>
 
@@ -396,6 +514,16 @@ export default function AdaptiveResultsPage() {
                           return question?.section === "Data Insights" && q.isCorrect
                         }).length,
                       },
+                      "Reading Comprehension": {
+                        total: results.answeredQuestions.filter((q) => {
+                          const question = adaptiveQuestions.find((aq) => aq.id === q.questionId)
+                          return question?.section === "Reading Comprehension"
+                        }).length,
+                        correct: results.answeredQuestions.filter((q) => {
+                          const question = adaptiveQuestions.find((aq) => aq.id === q.questionId)
+                          return question?.section === "Reading Comprehension" && q.isCorrect
+                        }).length,
+                      },
                     }
 
                     // Calculate accuracy for each section
@@ -418,6 +546,14 @@ export default function AdaptiveResultsPage() {
                                 100,
                             )
                           : 0,
+                      "Reading Comprehension":
+                        sectionPerformance["Reading Comprehension"].total > 0
+                          ? Math.round(
+                              (sectionPerformance["Reading Comprehension"].correct /
+                                sectionPerformance["Reading Comprehension"].total) *
+                                100,
+                            )
+                          : 0,
                     }
 
                     // Sort sections by accuracy (ascending)
@@ -436,6 +572,19 @@ export default function AdaptiveResultsPage() {
                         description: `This was your most challenging section with ${sectionAccuracy[weakestSection]}% accuracy. Dedicate more study time here.`,
                         icon: <BookOpen className="h-4 w-4" />,
                       })
+                    }
+
+                    // Reading Comprehension specific recommendation
+                    if (sectionPerformance["Reading Comprehension"].total > 0) {
+                      const rcAccuracy = sectionAccuracy["Reading Comprehension"]
+                      if (rcAccuracy < 60) {
+                        recommendations.push({
+                          title: "Improve Reading Comprehension",
+                          description:
+                            "Practice active reading techniques and focus on identifying main ideas and supporting details in complex passages.",
+                          icon: <BookOpen className="h-4 w-4" />,
+                        })
+                      }
                     }
 
                     // Difficulty level recommendation
@@ -522,7 +671,15 @@ export default function AdaptiveResultsPage() {
                     <Link href="/practice/verbal" className="flex flex-col items-start">
                       <span className="text-lg font-medium">Verbal Practice</span>
                       <span className="text-sm text-muted-foreground">
-                        Improve reading comprehension and critical reasoning
+                        Improve critical reasoning and sentence correction
+                      </span>
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="h-auto py-4 justify-start">
+                    <Link href="/practice/reading-comprehension" className="flex flex-col items-start">
+                      <span className="text-lg font-medium">Reading Comprehension</span>
+                      <span className="text-sm text-muted-foreground">
+                        Practice with complex passages and detailed questions
                       </span>
                     </Link>
                   </Button>
@@ -534,7 +691,7 @@ export default function AdaptiveResultsPage() {
                       </span>
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" className="h-auto py-4 justify-start">
+                  <Button asChild variant="outline" className="h-auto py-4 justify-start" className="md:col-span-2">
                     <Link href="/practice/adaptive" className="flex flex-col items-start">
                       <span className="text-lg font-medium">Full Adaptive Test</span>
                       <span className="text-sm text-muted-foreground">Take another full-length adaptive test</span>

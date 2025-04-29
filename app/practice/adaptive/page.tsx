@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowRight, Clock, Flag, HelpCircle, AlertTriangle } from "lucide-react"
+import { ArrowRight, Clock, Flag, HelpCircle, AlertTriangle, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -24,28 +25,37 @@ import {
   type AdaptiveQuestion,
   type AdaptiveTestState,
   type DifficultyLevel,
+  type ReadingPassage,
   initializeAdaptiveTest,
   updateTestState,
   selectNextQuestion,
   calculateFinalScore,
+  calculateSectionScore,
 } from "@/lib/cat-algorithm"
-import { adaptiveQuestions } from "@/data/adaptive-questions"
+import { adaptiveQuestions, adaptivePassages } from "@/data/adaptive-questions"
 
 export default function AdaptiveTestPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [testState, setTestState] = useState<AdaptiveTestState>(initializeAdaptiveTest())
   const [currentQuestion, setCurrentQuestion] = useState<AdaptiveQuestion | null>(null)
+  const [currentPassage, setCurrentPassage] = useState<ReadingPassage | null>(null)
   const [userAnswer, setUserAnswer] = useState<string>("")
   const [timeLeft, setTimeLeft] = useState(3600) // 60 minutes in seconds
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [testCompleted, setTestCompleted] = useState(false)
   const [totalQuestions] = useState(15) // Set the total number of questions for the test
+  const [activeTab, setActiveTab] = useState("questions")
 
   // Initialize test and get first question
   useEffect(() => {
-    const firstQuestion = selectNextQuestion(adaptiveQuestions, [], testState.currentDifficulty)
-    setCurrentQuestion(firstQuestion)
+    const result = selectNextQuestion(adaptiveQuestions, adaptivePassages, [], testState.currentDifficulty)
+
+    setCurrentQuestion(result.question)
+    if (result.passage) {
+      setCurrentPassage(result.passage)
+      setActiveTab("passage") // If it's a reading question, show the passage first
+    }
   }, [])
 
   // Timer effect
@@ -98,7 +108,14 @@ export default function AdaptiveTestPage() {
     const isCorrect = userAnswer === currentQuestion.correctAnswer
 
     // Update test state
-    const newState = updateTestState(testState, currentQuestion.id, userAnswer, isCorrect, currentQuestion.difficulty)
+    const newState = updateTestState(
+      testState,
+      currentQuestion.id,
+      userAnswer,
+      isCorrect,
+      currentQuestion.difficulty,
+      currentQuestion.section,
+    )
 
     setTestState(newState)
 
@@ -110,17 +127,32 @@ export default function AdaptiveTestPage() {
 
     // Get next question based on updated difficulty
     const answeredQuestionIds = newState.answeredQuestions.map((q) => q.questionId)
-    const nextQuestion = selectNextQuestion(adaptiveQuestions, answeredQuestionIds, newState.currentDifficulty)
+    const result = selectNextQuestion(
+      adaptiveQuestions,
+      adaptivePassages,
+      answeredQuestionIds,
+      newState.currentDifficulty,
+      undefined,
+      currentQuestion.passageId, // If we're in a passage, try to get more questions from the same passage
+    )
 
     // If no more questions available, end the test
-    if (!nextQuestion) {
+    if (!result.question) {
       handleSubmitTest()
       return
     }
 
     // Set the next question and reset user answer
-    setCurrentQuestion(nextQuestion)
+    setCurrentQuestion(result.question)
     setUserAnswer("")
+
+    // If it's a reading comprehension question with a new passage
+    if (result.passage && (!currentPassage || result.passage.id !== currentPassage.id)) {
+      setCurrentPassage(result.passage)
+      setActiveTab("passage") // Show the passage first
+    } else {
+      setActiveTab("questions") // Otherwise show the question
+    }
 
     // Show toast notification about difficulty change if it changed
     if (newState.currentDifficulty !== testState.currentDifficulty) {
@@ -140,6 +172,12 @@ export default function AdaptiveTestPage() {
     // Calculate final score
     const finalScore = calculateFinalScore(testState, totalQuestions)
 
+    // Calculate section scores
+    const quantitativeScore = calculateSectionScore(testState, "Quantitative")
+    const verbalScore = calculateSectionScore(testState, "Verbal")
+    const dataInsightsScore = calculateSectionScore(testState, "Data Insights")
+    const readingCompScore = calculateSectionScore(testState, "Reading Comprehension")
+
     // Simulate API call
     setTimeout(() => {
       setIsSubmitting(false)
@@ -157,6 +195,12 @@ export default function AdaptiveTestPage() {
           score: finalScore,
           answeredQuestions: testState.answeredQuestions,
           date: new Date().toISOString(),
+          sectionScores: {
+            Quantitative: quantitativeScore,
+            Verbal: verbalScore,
+            "Data Insights": dataInsightsScore,
+            "Reading Comprehension": readingCompScore,
+          },
         }),
       )
 
@@ -178,6 +222,7 @@ export default function AdaptiveTestPage() {
   }
 
   const progress = (testState.currentQuestionIndex / totalQuestions) * 100
+  const isReadingComprehension = currentQuestion.type === "reading-comprehension" && currentPassage
 
   return (
     <div className="container py-8">
@@ -235,6 +280,7 @@ export default function AdaptiveTestPage() {
           <span>
             Question {testState.currentQuestionIndex + 1} of {totalQuestions}
           </span>
+          <span>Section: {currentQuestion.section}</span>
           <span>{Math.round(progress)}% Complete</span>
         </div>
         <Progress value={progress} className="h-2" />
@@ -248,64 +294,138 @@ export default function AdaptiveTestPage() {
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.3 }}
         >
-          <Card className="mb-6">
-            <CardContent className="pt-6">
-              <div className="space-y-6">
-                {currentQuestion.type === "image-based" && (
-                  <div className="mb-4">
-                    <img
-                      src={currentQuestion.imageUrl || "/placeholder.svg"}
-                      alt="Question visual"
-                      className="mx-auto rounded-md"
-                    />
-                  </div>
-                )}
+          {isReadingComprehension ? (
+            <Card className="mb-6">
+              <CardContent className="p-0">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="passage" className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4" />
+                      Passage
+                    </TabsTrigger>
+                    <TabsTrigger value="questions" className="flex items-center gap-2">
+                      <HelpCircle className="h-4 w-4" />
+                      Question
+                    </TabsTrigger>
+                  </TabsList>
 
-                <div className="text-lg font-medium">{currentQuestion.text}</div>
+                  <TabsContent value="passage" className="p-6">
+                    <h2 className="text-xl font-bold mb-4">{currentPassage?.title}</h2>
+                    <div className="prose max-w-none">
+                      {currentPassage?.content.split("\n\n").map((paragraph, idx) => (
+                        <p key={idx} className="mb-4">
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                    <div className="flex justify-end mt-6">
+                      <Button onClick={() => setActiveTab("questions")}>
+                        Go to Question <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TabsContent>
 
-                {(currentQuestion.type === "multiple-choice" || currentQuestion.type === "data-sufficiency") && (
-                  <RadioGroup value={userAnswer} onValueChange={handleAnswerChange} className="space-y-3">
-                    {currentQuestion.options?.map((option) => (
-                      <div
-                        key={option.id}
-                        className="flex items-center space-x-2 rounded-md border p-3 transition-colors hover:bg-accent"
-                      >
-                        <RadioGroupItem value={option.id} id={`option-${option.id}`} />
-                        <Label htmlFor={`option-${option.id}`} className="flex-1 cursor-pointer">
-                          {option.text}
-                        </Label>
+                  <TabsContent value="questions" className="p-6">
+                    <div className="space-y-6">
+                      <div className="text-lg font-medium">{currentQuestion.text}</div>
+
+                      <RadioGroup value={userAnswer} onValueChange={handleAnswerChange} className="space-y-3">
+                        {currentQuestion.options?.map((option) => (
+                          <div
+                            key={option.id}
+                            className="flex items-center space-x-2 rounded-md border p-3 transition-colors hover:bg-accent"
+                          >
+                            <RadioGroupItem value={option.id} id={`option-${option.id}`} />
+                            <Label htmlFor={`option-${option.id}`} className="flex-1 cursor-pointer">
+                              {option.text}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+
+                      <div className="flex justify-between pt-4">
+                        <Button variant="outline" onClick={() => setActiveTab("passage")}>
+                          <BookOpen className="mr-2 h-4 w-4" /> View Passage
+                        </Button>
+                        <Button onClick={handleNextQuestion} disabled={!userAnswer} className="gap-2">
+                          {testState.currentQuestionIndex >= totalQuestions - 1 ? (
+                            <>
+                              Submit Test
+                              <Flag className="h-4 w-4" />
+                            </>
+                          ) : (
+                            <>
+                              Next Question
+                              <ArrowRight className="h-4 w-4" />
+                            </>
+                          )}
+                        </Button>
                       </div>
-                    ))}
-                  </RadioGroup>
-                )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  {currentQuestion.type === "image-based" && (
+                    <div className="mb-4">
+                      <img
+                        src={currentQuestion.imageUrl || "/placeholder.svg"}
+                        alt="Question visual"
+                        className="mx-auto rounded-md"
+                      />
+                    </div>
+                  )}
 
-                {currentQuestion.type === "open-question" && (
-                  <Textarea
-                    placeholder="Type your answer here..."
-                    value={userAnswer}
-                    onChange={(e) => handleAnswerChange(e.target.value)}
-                    className="min-h-[150px]"
-                  />
-                )}
+                  <div className="text-lg font-medium">{currentQuestion.text}</div>
 
-                <div className="flex justify-end pt-4">
-                  <Button onClick={handleNextQuestion} disabled={!userAnswer} className="gap-2">
-                    {testState.currentQuestionIndex >= totalQuestions - 1 ? (
-                      <>
-                        Submit Test
-                        <Flag className="h-4 w-4" />
-                      </>
-                    ) : (
-                      <>
-                        Next Question
-                        <ArrowRight className="h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
+                  {(currentQuestion.type === "multiple-choice" || currentQuestion.type === "data-sufficiency") && (
+                    <RadioGroup value={userAnswer} onValueChange={handleAnswerChange} className="space-y-3">
+                      {currentQuestion.options?.map((option) => (
+                        <div
+                          key={option.id}
+                          className="flex items-center space-x-2 rounded-md border p-3 transition-colors hover:bg-accent"
+                        >
+                          <RadioGroupItem value={option.id} id={`option-${option.id}`} />
+                          <Label htmlFor={`option-${option.id}`} className="flex-1 cursor-pointer">
+                            {option.text}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  )}
+
+                  {currentQuestion.type === "open-question" && (
+                    <Textarea
+                      placeholder="Type your answer here..."
+                      value={userAnswer}
+                      onChange={(e) => handleAnswerChange(e.target.value)}
+                      className="min-h-[150px]"
+                    />
+                  )}
+
+                  <div className="flex justify-end pt-4">
+                    <Button onClick={handleNextQuestion} disabled={!userAnswer} className="gap-2">
+                      {testState.currentQuestionIndex >= totalQuestions - 1 ? (
+                        <>
+                          Submit Test
+                          <Flag className="h-4 w-4" />
+                        </>
+                      ) : (
+                        <>
+                          Next Question
+                          <ArrowRight className="h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </motion.div>
       </AnimatePresence>
 

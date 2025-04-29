@@ -60,6 +60,15 @@ export default function PracticePage() {
       category: "section",
     },
     {
+      id: "reading-comprehension",
+      title: "Reading Comprehension",
+      description: "Practice with passages and associated questions",
+      icon: <BookOpen className="h-5 w-5" />,
+      duration: "60 minutes",
+      questions: 15,
+      category: "section",
+    },
+    {
       id: "quant-mini",
       title: "Quantitative Mini Test",
       description: "Short practice for quantitative skills",
