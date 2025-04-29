@@ -371,18 +371,25 @@ export default function AdaptiveTestPage() {
               <CardContent className="pt-6">
                 <div className="space-y-6">
                   {currentQuestion.type === "image-based" && (
-                    <div className="mb-4">
+                    <div className="mb-6">
                       <img
                         src={currentQuestion.imageUrl || "/placeholder.svg"}
                         alt="Question visual"
-                        className="mx-auto rounded-md"
+                        className="mx-auto rounded-md shadow-md border border-muted"
+                        width="100%"
+                        height="auto"
                       />
+                      <p className="text-sm text-muted-foreground text-center mt-2">
+                        Reference image for this Data Insights question
+                      </p>
                     </div>
                   )}
 
                   <div className="text-lg font-medium">{currentQuestion.text}</div>
 
-                  {(currentQuestion.type === "multiple-choice" || currentQuestion.type === "data-sufficiency") && (
+                  {(currentQuestion.type === "multiple-choice" ||
+                    currentQuestion.type === "data-sufficiency" ||
+                    currentQuestion.type === "image-based") && (
                     <RadioGroup value={userAnswer} onValueChange={handleAnswerChange} className="space-y-3">
                       {currentQuestion.options?.map((option) => (
                         <div
